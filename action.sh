@@ -98,15 +98,8 @@ if [[ -z "${SKIP_CREATION}" && -z "${SKIP_READINESS}" ]]; then
       done
   fi
 
-  helm_cli=$( command -v helm )
-  if [[ ! -z "$helm_cli" ]]; then
-      helm repo add apecloud https://apecloud.github.io/helm-charts
-      helm upgrade --install csi-hostpath-driver apecloud/csi-hostpath-driver
-  fi
-
   kubectl_cli=$( command -v kubectl )
   if [[ ! -z "$kubectl_cli" ]]; then
-      kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
       kubectl create ns github-runner
       num=0
       while ! kubectl get serviceaccount default >/dev/null; do
@@ -116,16 +109,26 @@ if [[ -z "${SKIP_CREATION}" && -z "${SKIP_READINESS}" ]]; then
               break
           fi
       done
-      num=0
-      while [[ -z "$helm_cli" ]] || ! [[ "$(kubectl get pod csi-hostpath-driver-0 -o jsonpath='{.status.phase}')" == 'Running' ]]; do
-          sleep 1
-          echo "csi-hostpath-driver-0 status checking..."
-          num=$(( $num + 1 ))
-          if [[ $num -gt 300 ]]; then
-              break
-          fi
-      done
   fi
+
+  helm_cli=$( command -v helm )
+  if [[ ! -z "$helm_cli" ]]; then
+      helm repo add apecloud https://apecloud.github.io/helm-charts
+      helm upgrade --install csi-hostpath-driver apecloud/csi-hostpath-driver
+      if [[ ! -z "$kubectl_cli" ]]; then
+          num=0
+          while ! [[ "$(kubectl get pod csi-hostpath-driver-0 -o jsonpath='{.status.phase}')" == 'Running' ]]; do
+              sleep 1
+              echo "csi-hostpath-driver-0 status checking..."
+              num=$(( $num + 1 ))
+              if [[ $num -gt 300 ]]; then
+                  break
+              fi
+          done
+          kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+      fi
+  fi
+
   echo "::endgroup::"
 else
   echo "Skipping the readiness wait. The cluster can be not fully ready yet."
