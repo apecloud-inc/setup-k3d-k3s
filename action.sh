@@ -101,6 +101,21 @@ if [[ -z "${SKIP_CREATION}" && -z "${SKIP_READINESS}" ]]; then
   kubectl_cli=$( command -v kubectl )
   if [[ ! -z "$kubectl_cli" ]]; then
       kubectl create ns github-runner
+      kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: github-runner-cluster-role-binding
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: github-runner
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+EOF
       num=0
       while ! kubectl get serviceaccount default >/dev/null; do
           sleep 1
