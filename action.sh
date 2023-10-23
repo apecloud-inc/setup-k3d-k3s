@@ -76,6 +76,13 @@ echo "k3d-version=${K3D}" >> $GITHUB_OUTPUT
 echo "k3s-version=${K3S}" >> $GITHUB_OUTPUT
 echo "k8s-version=${K8S}" >> $GITHUB_OUTPUT
 
+if command -v k3d &> /dev/null; then
+  echo "k3d is already installed"
+  echo "Removing k3d..."
+  # Remove k3d
+  k3d cluster delete --all
+fi
+
 # Start a cluster. It takes 20 seconds usually.
 if [[ -z "${SKIP_CREATION}" ]]; then
   k3d cluster create ${K3D_NAME:-} --wait --image=rancher/k3s:"${K3S//+/-}" ${K3D_ARGS:-}
