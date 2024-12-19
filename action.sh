@@ -15,7 +15,7 @@ fi
 # Even if the version is specific and complete, assume it is possibly partial.
 # 2-3 pages are enough to reach v0 while not depleting the GitHub API limits.
 versions=""
-for page in 1 2 ; do
+for page in 1 2 3 4 5 ; do
   url="${GITHUB_API_URL}/repos/${REPO}/releases?per_page=999&page=${page}"
   releases=$(curl --silent --fail --location "${authz[@]-}" "$url")
   versions+=$(jq <<< "$releases" '.[] | select(.prerelease==false) | .tag_name')
@@ -75,6 +75,13 @@ echo "Detected k8s-version::${K8S}"
 echo "k3d-version=${K3D}" >> $GITHUB_OUTPUT
 echo "k3s-version=${K3S}" >> $GITHUB_OUTPUT
 echo "k8s-version=${K8S}" >> $GITHUB_OUTPUT
+
+if command -v k3d &> /dev/null; then
+  echo "k3d is already installed"
+  echo "Removing k3d..."
+  # Remove k3d
+  k3d cluster delete --all
+fi
 
 # Start a cluster. It takes 20 seconds usually.
 if [[ -z "${SKIP_CREATION}" ]]; then
