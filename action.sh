@@ -15,7 +15,7 @@ fi
 # Even if the version is specific and complete, assume it is possibly partial.
 # 2-3 pages are enough to reach v0 while not depleting the GitHub API limits.
 versions=""
-for page in 1 2 3 4 5 ; do
+for page in 1 2 3 4 5 6 ; do
   url="${GITHUB_API_URL}/repos/${REPO}/releases?per_page=999&page=${page}"
   releases=$(curl --silent --fail --location "${authz[@]-}" "$url")
   versions+=$(jq <<< "$releases" '.[] | select(.prerelease==false) | .tag_name')
